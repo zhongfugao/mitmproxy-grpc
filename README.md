@@ -4,7 +4,7 @@ As of now, mitmproxy only supports raw deserialization of protobuf data. `mitmpr
 
 ## Usage
 ```
-mitmproxy -s mitmproxy_grpc.py --set descriptor_file=pathToDescriptorFile
+mitmproxy -p 8888 -s mitmproxy_grpc.py --set descriptor_file=pathToDescriptorFile
 ```
 
 ## Obtaining a descriptor file

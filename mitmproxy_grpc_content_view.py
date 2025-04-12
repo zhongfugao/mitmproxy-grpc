@@ -9,7 +9,8 @@ class GrpcProtobufContentView(mitmproxy.contentviews.base.View):
     name = "gRPC/Protocol Buffer using protoc"
 
     supported_content_types = [
-        "application/grpc"
+        "application/grpc",
+        "application/proto"
     ]
     
     def __init__(self, protobuf_modifier: protobuf_modification.ProtobufModifier) -> None:

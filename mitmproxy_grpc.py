@@ -16,5 +16,5 @@ def done():
 
 addons = [
     GrpcOption(protobuf_modifier),
-    GrpcCommand(protobuf_modifier),
+    # GrpcCommand(protobuf_modifier),
 ]
