@@ -4,17 +4,16 @@ import protobuf_modification
 
 import mitmproxy
 
-class GrpcProtobufContentView(mitmproxy.contentviews.base.View):
 
+class GrpcProtobufContentView(mitmproxy.contentviews.base.View):
     name = "gRPC/Protocol Buffer using protoc"
 
-    supported_content_types = [
-        "application/grpc",
-        "application/proto"
-    ]
-    
-    def __init__(self, protobuf_modifier: protobuf_modification.ProtobufModifier) -> None:
-       self.protobuf_modifier = protobuf_modifier
+    supported_content_types = ["application/grpc", "application/proto"]
+
+    def __init__(
+        self, protobuf_modifier: protobuf_modification.ProtobufModifier
+    ) -> None:
+        self.protobuf_modifier = protobuf_modifier
 
     def __call__(
         self,
@@ -25,8 +24,12 @@ class GrpcProtobufContentView(mitmproxy.contentviews.base.View):
         http_message: typing.Optional[mitmproxy.http.Message] = None,
         **unknown_metadata,
     ):
-        deserialized = self.protobuf_modifier.deserialize(http_message, flow.request.path, data)
+        deserialized = self.protobuf_modifier.deserialize(
+            http_message, flow.request.path, data, as_json=True
+        )
         return self.name, mitmproxy.contentviews.base.format_text(deserialized)
 
-    def render_priority(self, data: bytes, *, content_type: typing.Optional[str] = None, **metadata) -> float:
+    def render_priority(
+        self, data: bytes, *, content_type: typing.Optional[str] = None, **metadata
+    ) -> float:
         return float(content_type in self.supported_content_types)

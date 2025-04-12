@@ -4,9 +4,11 @@ from google.protobuf.descriptor_pool import DescriptorPool
 from google.protobuf.message_factory import MessageFactory, GetMessageClass
 from google.protobuf.message import DecodeError
 from google.protobuf.text_format import MessageToString, Parse, ParseError
+from google.protobuf.json_format import MessageToJson
 
 import mitmproxy
 import mitmproxy.http
+
 
 class ProtobufModifier:
     """
@@ -29,7 +31,13 @@ class ProtobufModifier:
 
             self.message_factory = MessageFactory(self.descriptor_pool)
 
-    def deserialize(self, http_message: mitmproxy.http.Message, path: str, serialized_protobuf: bytes) -> str:
+    def deserialize(
+        self,
+        http_message: mitmproxy.http.Message,
+        path: str,
+        serialized_protobuf: bytes,
+        as_json: bool = False,
+    ) -> str:
         """
         Takes a protobuf byte array and returns a deserialized string in text format.
         You must set a descriptor file must prior to calling this method.
@@ -43,7 +51,7 @@ class ProtobufModifier:
         # Strip the length and compression header; 5 bytes in total.
         # Payload compression is not supported at the moment.
         # data_without_prefix = serialized_protobuf[5:]
-        
+
         # keeping the first 5 bytes seems to be good
         data_without_prefix = serialized_protobuf
 
@@ -61,13 +69,23 @@ class ProtobufModifier:
         except DecodeError as e:
             raise ValueError("Unable to deserialize input") from e
 
-        return MessageToString(
-            message=message,
-            descriptor_pool=self.descriptor_pool,
-            print_unknown_fields=True,
-        )
+        if as_json:
+            return MessageToJson(
+                message=message,
+                descriptor_pool=self.descriptor_pool,
+                always_print_fields_with_no_presence=True,
+                ensure_ascii=False,
+            )
+        else:
+            return MessageToString(
+                message=message,
+                descriptor_pool=self.descriptor_pool,
+                print_unknown_fields=True,
+            )
 
-    def serialize(self, http_message: mitmproxy.http.Message, path: str, text: str) -> bytes:
+    def serialize(
+        self, http_message: mitmproxy.http.Message, path: str, text: str
+    ) -> bytes:
         """
         Takes a string and serializes it into a protobuf byte array.
         You must set a descriptor file must prior to calling this method.
@@ -95,7 +113,7 @@ class ProtobufModifier:
                 message=empty_message,
                 allow_field_number=True,
                 allow_unknown_field=True,
-                descriptor_pool=self.descriptor_pool
+                descriptor_pool=self.descriptor_pool,
             )
         except ParseError as e:
             raise ValueError("Unable to serialize input") from e
@@ -108,7 +126,7 @@ class ProtobufModifier:
     def __find_method_by_path(self, path: str) -> MethodDescriptor:
         try:
             # Remove leading slash and split path
-            parts = path.lstrip('/').split('/')
+            parts = path.lstrip("/").split("/")
             if len(parts) < 2:
                 raise ValueError(f"Invalid gRPC path format: {path}")
             # convert the rest to a fully qualified namespace that we can look up.
@@ -116,4 +134,3 @@ class ProtobufModifier:
             return self.descriptor_pool.FindMethodByName(method_path)
         except KeyError as e:
             raise ValueError("Failed to resolve method name by path") from e
-
